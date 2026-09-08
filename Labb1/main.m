@@ -83,4 +83,4 @@ end
 
 %% Beräkna K1A (Ekvation L.9)
 
-K1A = 
+K1A = 2; % lol
