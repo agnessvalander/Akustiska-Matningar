@@ -1,0 +1,5 @@
+side 1 : 2.66m x 1.7m
+side 2 : 2.33m x 1.7m
+side 3 : 2.66m x 1.7m
+side 4 : 2.33m x 1.7m
+side 5 : 2.66m x 2.33m
