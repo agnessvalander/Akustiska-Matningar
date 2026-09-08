@@ -58,7 +58,7 @@ for i = 1:5
 end 
 
 
-%% Areavägt A-vägt ljudtryck (Ekvation L.8)
+%% Areavägt A-vägt ljudtryck
 
 LpA_kalla_total = 10*log10( ...
     sum(S_i .* 10.^(0.1*LpA_kalla)) / S);
