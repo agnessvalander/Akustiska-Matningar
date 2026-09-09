@@ -29,14 +29,14 @@ end
 
 for i = 1:5 % För RSS
 
-    filename = sprintf('ref_source_side%d_ex.dat',i); % Går igenom fil 1-5
+    filename = sprintf('ref_source_side%d_ex.dat',i);
 
     [header{i},spectra{i}] = readMWLdaq_LV(filename,'spectra');
 
     data_RSS{i} = spectra{i}.sig_1_1_3OCT0;
 
-    f_RSS{i} = data_RSS{i}(:,1); % Alla frekvenser från RSS-mätningen
-    Lp_RSS{i} = data_RSS{i}(:,2); % Uppmätt ljudtryck för respektive frekvens
+    f_RSS{i} = data_RSS{i}(:,1);
+    Lp_RSS{i} = data_Rss{i}(:,2); 
 
 end 
 
