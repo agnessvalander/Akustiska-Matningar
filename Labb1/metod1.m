@@ -16,14 +16,14 @@ end
 
 for i = 1:5 % Bakgrundsljud 
 
-    filename = sprintf('background_side‰d_ex.dat'); % Går igenom fil 1-5
+    filename = sprintf('background_side%d_ex.dat',i); % Går igenom fil 1-5
 
-    [header{i}, spectra{i}] = readMWLdaq_LV(filename, 'spectra');
+    [header{i}, spectra{i}] = readMWLdaq_LV(filename,'spectra');
 
     data_B{i} = spectra{i}.sig_1_1_3OCT0;
 
     f_B{i} = data_B{i}(:,1); % Alla frekvenser för denna mätning 
-    Lp_B = data_B{i}(:,2); % Uppmätt ljudtryck för respektive frekvens
+    Lp_B{i} = data_B{i}(:,2); % Uppmätt ljudtryck för respektive frekvens
 
 end 
 
@@ -74,14 +74,12 @@ for i = 1:5 % A-vägning för bakgrundsljudet
     Lp_valda_B = zeros(size(f_A));
 
     for k = 1:length(f_A)
-
         [~,index] = min(abs(f_B{i} - f_A(k)));
-
-        Lp_valda(k) = Lp_B{i}(index);
+        Lp_valda_B(k) = Lp_B{i}(index);
     end 
     
     LpA_ters_B = Lp_valda_B + A; % Applicera A-vägningen för varje tersband
-    LpA_bakgrund = 10*log10(sum(10.^(0.1*LpA_ters_B))); % A-vägd ljudtrycksnivå
+    LpA_bakgrund(i) = 10*log10(sum(10.^(0.1*LpA_ters_B))); % A-vägd ljudtrycksnivå
 end 
 
 
@@ -91,29 +89,35 @@ LpA_kalla_total = 10*log10(sum(S_i .* 10.^(0.1*LpA_kalla)) / S); % För källan
 
 LpA_bakgrund_total = 10*log10(sum(S_i .* 10.^(0.1*LpA_bakgrund)) / S); % För bakgrundsljudet
 
-delta_LA = LpA_kalla_total - 
+delta_LA = LpA_kalla_total - LpA_bakgrund_total; % Skillnaden mellan källnivå och bakgrundsnivå
 
-disp('Skillnaden mellan källa och bakgrund: ')
-disp()
+disp('Skillnaden mellan källa och bakgrund [dB(A)]: ')
+disp(delta_LA)
 
-disp('Areavägt A-vägt ljudtryck [dB(A)]:')
-disp(LpA_kalla_total)
+%% Beräkna K1A, bakgrundskorrigeringen (L.9)
 
+K_1A = -10*log10(1 - 10^(-0.1*delta_LA));
+disp('Bakgrundskorrigering K1A [dB]:')
+disp(K_1A)
 
+%% Beräkning av ljudeffektnivå (L.11)
+
+S_0 = 1; % Referensarean är 1 [m^2] enligt instruktion 
+
+L_WA = LpA_kalla_total - K_1A + 10*log10(S/S_0);
+
+disp('Ljudeffektnivå L_WA [dB]:')
+disp(L_WA)
 %% Plottar grafer och kontrollerar att inläsning har skett korrekt 
 
-for i = 1:5
-
-    figure
-    semilogx(f{i},Lp{i});
-    grid on 
-
-    xlabel('Frekvens [Hz]')
-    ylabel('Ljudtrycksnivå [dB]')
-    title(sprintf('Source - side %d',i))
-
-end 
-
-%% Beräkna K1A (Ekvation L.9)
-
-K1A = 2; % lol
+% for i = 1:5
+% 
+%     figure
+%     semilogx(f{i},Lp{i});
+%     grid on 
+% 
+%     xlabel('Frekvens [Hz]')
+%     ylabel('Ljudtrycksnivå [dB]')
+%     title(sprintf('Source - side %d',i))
+% 
+% end 
