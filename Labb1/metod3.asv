@@ -1,11 +1,46 @@
+
 %% Metod 3 - intensitetsskanner
+clear all, clc
+
+
 
 P0 = 10^-12;     %[W]
 I0 = 10^-12;     %[Wm^-2]
 
-S_i = [2.66*1.70, ...
-       2.33*1.7, ...
-       2.66*1.7, ...
-       2.33*1.7, ...
-       2.66*2.33];
-S = sum(S_i);
+S_i = [0.8*0.7, ...
+       0.6*0.7, ...
+       0.8*0.7, ...
+       0.6*0.7, ...
+       0.8*0.6];
+S = sum(S_i);    %[m^2]
+
+
+files = {
+    'source_side1_new_ex.dat'
+    'source_side2_new_ex.dat'
+    'source_side3_new_ex.dat'
+    'source_side4_new_ex.dat'
+    'source_side5_new_ex.dat'
+};
+
+
+
+%% Tabell med 37 rader skapas här, kolumn 1 har frekvens och kolumn 2 har "Cross Power"
+
+
+for i = 1: length(files)
+
+    [header, spectra] = readMWLdaq_LV(files{i}, 'spectra');
+    
+    L_nI = spectra.sig_1_1_3OCT0(:,2);
+    
+    I = I0 * 10.^(0.1 * L_nI);
+    P_i(i,:) = I * S_i(i);  %matris med P
+
+end
+
+% Summera över P
+
+P = sum(P_i, 1);
+
+L_W = 10 * log10(P / P0); %14:31 är värden dB för frekvenserna mellan 100-5000
