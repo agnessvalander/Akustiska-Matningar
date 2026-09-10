@@ -14,8 +14,6 @@ S_i = [0.8*0.7, ...
        0.8*0.6];
 S = sum(S_i);    %[m^2]
 
-LnI_i = [];
-
 
 files = {
     'source_side1_new_ex.dat'
@@ -36,4 +34,9 @@ frequency = spectra.sig_1_1_3OCT0(:,1);
 crossPower = spectra.sig_1_1_3OCT0(:,2);
 
 [header, spectra, rawdata] = readMWLdaq_LV(files{1}, 'all');
+
+L_nI = spectra.sig_1_1_3OCT0(:,2);
+
+I = I0 * 10.^(0.1 * L_nI);
+
 
