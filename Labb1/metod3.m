@@ -50,10 +50,10 @@ L_W = 10 * log10(P / P0); %14:31 är värden dB för frekvenserna mellan 100-500
 %A-vägnings konstanter i tersband
 A = [-19.1, -16.1, -13.4, -10.9, -8.6, -6.6, ...
      -4.8, -3.2, -1.9, -0.8, 0, 0.6, ...
-      1.0,  1.2,  1.3,  1.2, 1.0, 0.5];
+      1.0,  1.2,  1.3,  1.2, 1.0, 0.5, -0.1];
 
 %A-vägda värden i tersband
-L_W_A_bands = L_W(14:31) + A;
+L_W_A_bands = L_W(14:32) + A;
 
 %Kombinera! Vi måste summera bidragen eftersom nivåer är logaritmiska (kan ej bara ta medelvärdet alltså)
 L_WA = 10 * log10(sum(10.^(0.1 * L_W_A_bands)));
