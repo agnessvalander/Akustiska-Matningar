@@ -58,3 +58,5 @@ L_W_A_bands = L_W(14:32) + A;
 %Kombinera! Vi måste summera bidragen eftersom nivåer är logaritmiska (kan ej bara ta medelvärdet alltså)
 L_WA = 10 * log10(sum(10.^(0.1 * L_W_A_bands)));
 
+%%Kör till tersband 31 för att få till 5000Hz, nr 32 behövdes för att
+%%matcha mot facit 
