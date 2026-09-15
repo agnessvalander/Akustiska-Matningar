@@ -15,12 +15,20 @@ S_i = [0.8*0.7, ...
 S = sum(S_i);    %[m^2]
 
 
+% files = {
+%     'source_side1_new_ex.dat'
+%     'source_side2_new_ex.dat'
+%     'source_side3_new_ex.dat'
+%     'source_side4_new_ex.dat'
+%     'source_side5_new_ex.dat'
+% };
+
 files = {
-    'source_side1_new_ex.dat'
-    'source_side2_new_ex.dat'
-    'source_side3_new_ex.dat'
-    'source_side4_new_ex.dat'
-    'source_side5_new_ex.dat'
+    'side1_1.dat'
+    'side2_1.dat'
+    'side3_1.dat'
+    'side4_1.dat'
+    'side5_1.dat'
 };
 
 
