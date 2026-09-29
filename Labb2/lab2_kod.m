@@ -118,8 +118,11 @@ sumHij = sum(Hij, 2);
 size(sumHij)
 
 %% 7. Structural loss factor - power injection
-eta = imag(Hii ./ (ms .* sumHij)); %denna blir sämst
-eta_test = imag(Hii) ./ (ms .* sum(abs(Hij).^2, 2)); % denna funkar.... men då är L.17 ändrad!
+
+%testar ny eta
+eta = imag(Hii) ./ (ms .* sum(abs(Hij).^2, 2));
+
+
 
 %% 8. Plot structural loss factor - power injection
 
@@ -132,10 +135,10 @@ eta_test = imag(Hii) ./ (ms .* sum(abs(Hij).^2, 2)); % denna funkar.... men då 
 
 
 figure 
-semilogx(f, eta_test, 'o-')
-xlabel('Frequency [Hz]')
-ylabel('Structural loss factor \eta')
-title('Test of alternative PIM calculation')
+semilogx(f, eta, 'o-')
+xlabel('Frekvens [Hz]')
+ylabel(' \eta')
+title('PIM')
 grid on
 
 size(f)
