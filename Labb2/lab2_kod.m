@@ -60,11 +60,15 @@ Hii_phase_data = inputSpectra.sig_4_P_1_3OCT0;
 % Frequency
 f = Hii_mag_data(:,1);
 
+% Select frequency range 125-5000 Hz
+freqMask = f >= f_min & f <= f_max;
+f = f(freqMask);
+
 % Magnitude
-Hii_mag = Hii_mag_data(:,2);
+Hii_mag = Hii_mag_data(freqMask,2);
 
 % Phase in degrees
-Hii_phase_deg = Hii_phase_data(:,2);
+Hii_phase_deg = Hii_phase_data(freqMask,2);
 
 
 %% 3. Convert Hii from magnitude + phase to complex form
@@ -74,12 +78,6 @@ Hii_phase_rad = deg2rad(Hii_phase_deg);
 Hii = Hii_mag .* exp(1j * Hii_phase_rad);
 
 
-%% 4. Select frequency range 125-5000 Hz
-
-freqMask = f >= f_min & f <= f_max;
-
-f = f(freqMask);
-Hii = Hii(freqMask);
 
 
 %% 5. Read transfer accelerances Hij
@@ -115,26 +113,34 @@ for ii = 1:12
 
 end
 
-
-%% 6. Sum all transfer accelerances
-
+%% 6. Sum of transfer accelerances
 sumHij = sum(Hij, 2);
+size(sumHij)
+
+%% 7. Structural loss factor - power injection
+
+%testar ny eta
+eta = imag(Hii) ./ (ms .* sum(abs(Hij).^2, 2));
 
 
-%% 7. Calculate structural loss factor
 
-eta = imag(Hii ./ (ms .* sumHij));
+%% 8. Plot structural loss factor - power injection
+
+% figure 
+% semilogx(f, eta, 'o-')
+% xlabel('Frequency [Hz]')
+% ylabel('Structural loss factor \eta')
+% title('Structural loss factor - Power Injection Method')
+% grid on
 
 
-%% 8. Plot structural loss factor
-
-figure
-
+figure 
 semilogx(f, eta, 'o-')
-
+xlabel('Frekvens [Hz]')
+ylabel(' \eta')
+title('PIM')
 grid on
 
-xlabel('Frequency [Hz]')
-ylabel('\eta [-]')
-
-title('Structural loss factor - Power injection method')
+size(f)
+size(Hii)
+size(Hij)
