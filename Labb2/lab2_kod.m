@@ -35,9 +35,6 @@ f_min = 125;  % [Hz]
 f_max = 5000; % [Hz]
 
 
-%% 1. Read input accelerance Hii
-
-
 
 %% Test file path
 
@@ -46,7 +43,7 @@ inputFile = fullfile(dataFolder, ...
 
 [~, inputSpectra] = readMWLdaq_LV(inputFile, 'spectra');
 
-fieldnames(inputSpectra)
+fieldnames(inputSpectra);
 
 
 %% 2. Extract 1/3-octave magnitude and phase
@@ -115,7 +112,6 @@ end
 
 %% 6. Sum of transfer accelerances
 sumHij = sum(Hij, 2);
-size(sumHij)
 
 %% 7. Structural loss factor - power injection
 
@@ -123,16 +119,7 @@ size(sumHij)
 eta = imag(Hii) ./ (ms .* sum(abs(Hij).^2, 2));
 
 
-
 %% 8. Plot structural loss factor - power injection
-
-% figure 
-% semilogx(f, eta, 'o-')
-% xlabel('Frequency [Hz]')
-% ylabel('Structural loss factor \eta')
-% title('Structural loss factor - Power Injection Method')
-% grid on
-
 
 figure 
 semilogx(f, eta, 'o-')
@@ -141,6 +128,126 @@ ylabel(' \eta')
 title('PIM')
 grid on
 
-size(f)
-size(Hii)
-size(Hij)
+%% 9. Read reverberation data
+
+rmFolder = fullfile(fileparts(mfilename('fullpath')), ...
+    'Labb2_riktig_data', 'rm');
+
+dir(fullfile(rmFolder, '*.dat'));
+
+%rmFiles = {'p1_1.dat', 'p1_2.dat', 'p1_3.dat'};
+rmFiles = {'rm_1.2.dat', 'rm_1.3.dat', 'rm_1.5.dat'};
+
+%% 10. Process reverberation measurements
+
+numFiles = length(rmFiles);
+eta_all = NaN(numFiles, 16);
+
+for k = 1:numFiles
+
+    rmFile = fullfile(rmFolder, rmFiles{k});
+
+    [~, ~, rmData] = readMWLdaq_LV(rmFile, 'rawdata');
+
+ 
+Fs = 16000;
+
+raw_data = rmData{2}(:,2);
+
+octfilt = octaveFilterBank('1/3 octave', Fs, ...
+    'FrequencyRange', [125 5000], ...
+    'FilterOrder', 12);
+
+oct_data = octfilt(raw_data);
+
+size(oct_data)
+
+%% 11. Rolling mean average
+at = 0.02;              % averaging window [s]
+aS = round(at * Fs);    % averaging window [samples]
+
+b = (1 / aS) * ones(1, aS);
+a = 1;
+
+mf_data = filter(b, a, abs(oct_data));
+
+t = rmData{2}(:,1);
+
+centerFrequencies = getCenterFrequencies(octfilt);
+
+
+numBands = length(centerFrequencies);
+
+T60 = NaN(1, numBands);
+
+for i = 1:numBands
+
+    % Normalize level to 0 dB
+    level_dB = 20*log10(mf_data(:,i) / max(mf_data(:,i)));
+
+    % Find peak
+    [maxLevel, idx_peak] = max(level_dB);
+    t_peak = t(idx_peak);
+
+    % Start fitting at -6 dB
+    idx_start_relative = find( ...
+        level_dB(idx_peak:end) <= maxLevel - 6, ...
+        1, 'first');
+
+    if isempty(idx_start_relative)
+        continue
+    end
+
+    idx_start = idx_peak + idx_start_relative - 1;
+
+    % Estimate noise floor
+    noiseMask = t >= 5 & t <= 6;
+    noiseFloor = median(level_dB(noiseMask));
+
+    % End fitting 10 dB above noise floor
+    endLevel = noiseFloor + 10;
+
+    idx_end_relative = find( ...
+        level_dB(idx_start:end) <= endLevel, ...
+        1, 'first');
+
+    if isempty(idx_end_relative)
+        continue
+    end
+
+    idx_end = idx_start + idx_end_relative - 1;
+
+    % Linear fit
+    fitMask = t >= t(idx_start) & t <= t(idx_end);
+
+    p = polyfit(t(fitMask), level_dB(fitMask), 1);
+
+    slope = p(1);
+
+    % Reverberation time
+    T60(i) = -60 / slope;
+
+end
+
+
+figure
+semilogx(centerFrequencies, T60, 'o-')
+xlabel('Frequency [Hz]')
+ylabel('T_{60} [s]')
+title('Reverberation time')
+grid on
+
+
+eta = 2.2 ./ (centerFrequencies .* T60);
+eta_all(k,:) = eta;
+end
+eta_mean = mean(eta_all, 1);
+T60
+
+figure
+semilogx(centerFrequencies, eta_mean, 'o-')
+xlabel('Frequency [Hz]')
+ylabel('\eta')
+title('Mean loss factor from reverberation time')
+grid on
+
