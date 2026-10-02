@@ -5,30 +5,13 @@ clear
 close all
 clc
 
-%% Kodstruktur
-
-% Settings
-% 1. Read input accelerance
-% 2. Read transfer accelerances
-% 3. Convert magnitude + phase to complex H
-% 4. Calculate structural loss factor - power injection
-% 5. Plot power injection result
-% 6. Read reverberation data
-% 7. Third-octave filtering
-% 8. RMS averaging
-% 9. Calculate T60
-% 10. Calculate structural loss factor - reverberation
-% 11. Plot reverberation result
-
-%%
-
 %Settings
 % Assumed mass of one plate section
 ms = 6.5/12;       % [kg]
 
 % Folder
 dataFolder = fullfile(fileparts(mfilename('fullpath')), ...
-    'labb2_data', 'pim');
+    'Labb2_riktig_data', 'pim');
 
 % Frequency range according to the lab instructions
 f_min = 125;  % [Hz]
@@ -38,8 +21,10 @@ f_max = 5000; % [Hz]
 
 %% Test file path
 
+%inputFile = fullfile(dataFolder, ...
+    %'ex3_input_accelerance_v201_60_6000hz_ex.dat');
 inputFile = fullfile(dataFolder, ...
-    'ex3_input_accelerance_v201_60_6000hz_ex.dat');
+    'pim_input_acc_front.dat');
 
 [~, inputSpectra] = readMWLdaq_LV(inputFile, 'spectra');
 
@@ -51,21 +36,39 @@ fieldnames(inputSpectra);
 % Magnitude
 Hii_mag_data = inputSpectra.sig_2_1_3OCT0;
 
+
 % Phase
-Hii_phase_data = inputSpectra.sig_4_P_1_3OCT0;
+Hii_phase_data = inputSpectra.sig_3_Phi0;
 
-% Frequency
-f = Hii_mag_data(:,1);
+% % Frequency
+% f = Hii_mag_data(:,1);
+% 
+% % Select frequency range 125-5000 Hz
+% freqMask = f >= f_min & f <= f_max;
+% f = f(freqMask);
+% 
+% % Magnitude
+% Hii_mag = Hii_mag_data(freqMask,2);
+% 
+% % Phase in degrees
+% Hii_phase_deg = Hii_phase_data(freqMask,2);
 
-% Select frequency range 125-5000 Hz
-freqMask = f >= f_min & f <= f_max;
-f = f(freqMask);
+% Frequency and magnitude
+Hii_freq = Hii_mag_data(:,1);
+Hii_mag_all = Hii_mag_data(:,2);
 
-% Magnitude
-Hii_mag = Hii_mag_data(freqMask,2);
+% Phase data
+phase_freq = Hii_phase_data(:,1);
+phase_deg = Hii_phase_data(:,2);
 
-% Phase in degrees
-Hii_phase_deg = Hii_phase_data(freqMask,2);
+% Keep only 125-5000 Hz
+freqMask = Hii_freq >= f_min & Hii_freq <= f_max;
+
+f = Hii_freq(freqMask);
+Hii_mag = Hii_mag_all(freqMask);
+
+% Interpolate phase to the 1/3-octave frequencies
+Hii_phase_deg = interp1(phase_freq, phase_deg, f);
 
 
 %% 3. Convert Hii from magnitude + phase to complex form
@@ -79,25 +82,31 @@ Hii = Hii_mag .* exp(1j * Hii_phase_rad);
 
 %% 5. Read transfer accelerances Hij
 
-Hij = zeros(length(f),12);
+Hij = zeros(length(f),6);
 
-for ii = 1:12
+for ii = 1:6
 
     % Construct filename
     filename = sprintf( ...
-        'ex3_p%d_v201_60_6000hz_ex.dat', ii);
+        'pim_in.pos1_acc.pos%d.dat', ii);
 
     filepath = fullfile(dataFolder, filename);
 
     % Read data
     [~, spectra] = readMWLdaq_LV(filepath, 'spectra');
 
-    % Extract magnitude and phase
     Hij_mag_data = spectra.sig_2_1_3OCT0;
-    Hij_phase_data = spectra.sig_4_P_1_3OCT0;
-
+    Hij_phase_data = spectra.sig_3_Phi0;
+    
+    % Magnitude at 1/3-octave frequencies
+    Hij_freq = Hij_mag_data(:,1);
     Hij_mag = Hij_mag_data(:,2);
-    Hij_phase_deg = Hij_phase_data(:,2);
+
+    % Phase at the same frequencies
+    phase_freq = Hij_phase_data(:,1);
+    phase_deg = Hij_phase_data(:,2);
+
+    Hij_phase_deg = interp1(phase_freq, phase_deg, Hij_freq);
 
     % Convert phase from degrees to radians
     Hij_phase_rad = deg2rad(Hij_phase_deg);
@@ -113,16 +122,19 @@ end
 %% 6. Sum of transfer accelerances
 sumHij = sum(Hij, 2);
 
+
 %% 7. Structural loss factor - power injection
 
-%testar ny eta
-eta = imag(Hii) ./ (ms .* sum(abs(Hij).^2, 2));
+%eta_pim = imag(Hii) ./ (ms .* sum(abs(Hij).^2, 2));
 
+%eta_pim = imag(Hii ./ (ms .* sumHij));
+
+eta_pim = imag(Hii ./ (ms .* sum(abs(Hij).^2, 2)));
 
 %% 8. Plot structural loss factor - power injection
 
 figure 
-semilogx(f, eta, 'o-')
+semilogx(f, eta_pim, 'o-')
 xlabel('Frekvens [Hz]')
 ylabel(' \eta')
 title('PIM')
@@ -136,7 +148,8 @@ rmFolder = fullfile(fileparts(mfilename('fullpath')), ...
 dir(fullfile(rmFolder, '*.dat'));
 
 %rmFiles = {'p1_1.dat', 'p1_2.dat', 'p1_3.dat'};
-rmFiles = {'rm_1.2.dat', 'rm_1.3.dat', 'rm_1.5.dat'};
+rmFiles = {'rm_1.2.dat', 'rm_1.3.dat', 'rm_1.5.dat','rm_1.6.dat','rm_3.1.dat'...
+    'rm_3.4.dat','rm_3.5.dat','rm_3.6.dat','rm_6.1.dat','rm_6.2.dat','rm_6.3.dat','rm_6.4.dat'};
 
 %% 10. Process reverberation measurements
 
@@ -230,17 +243,18 @@ for i = 1:numBands
 end
 
 
-figure
-semilogx(centerFrequencies, T60, 'o-')
-xlabel('Frequency [Hz]')
-ylabel('T_{60} [s]')
-title('Reverberation time')
-grid on
+% figure
+% semilogx(centerFrequencies, T60, 'o-')
+% xlabel('Frequency [Hz]')
+% ylabel('T_{60} [s]')
+% title('Reverberation time')
+% grid on
 
 
 eta = 2.2 ./ (centerFrequencies .* T60);
 eta_all(k,:) = eta;
 end
+
 eta_mean = mean(eta_all, 1);
 T60
 

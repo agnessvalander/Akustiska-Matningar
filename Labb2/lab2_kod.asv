@@ -28,7 +28,7 @@ ms = 6.5/12;       % [kg]
 
 % Folder
 dataFolder = fullfile(fileparts(mfilename('fullpath')), ...
-    'labb2_data', 'pim');
+    'Labb2_riktig_data', 'pim');
 
 % Frequency range according to the lab instructions
 f_min = 125;  % [Hz]
@@ -38,8 +38,10 @@ f_max = 5000; % [Hz]
 
 %% Test file path
 
+%inputFile = fullfile(dataFolder, ...
+    %'ex3_input_accelerance_v201_60_6000hz_ex.dat');
 inputFile = fullfile(dataFolder, ...
-    'ex3_input_accelerance_v201_60_6000hz_ex.dat');
+    'pim_input_acc_front.dat');
 
 [~, inputSpectra] = readMWLdaq_LV(inputFile, 'spectra');
 
@@ -51,8 +53,9 @@ fieldnames(inputSpectra);
 % Magnitude
 Hii_mag_data = inputSpectra.sig_2_1_3OCT0;
 
+
 % Phase
-Hii_phase_data = inputSpectra.sig_4_P_1_3OCT0;
+Hii_phase_data = inputSpectra.sig_3_Phi0;
 
 % Frequency
 f = Hii_mag_data(:,1);
@@ -85,25 +88,48 @@ for ii = 1:12
 
     % Construct filename
     filename = sprintf( ...
-        'ex3_p%d_v201_60_6000hz_ex.dat', ii);
+        'pim_in.pos1_acc.pos%d.dat', ii);
 
     filepath = fullfile(dataFolder, filename);
 
     % Read data
     [~, spectra] = readMWLdaq_LV(filepath, 'spectra');
 
-    % Extract magnitude and phase
+    %% gammalt 
+    % % Extract magnitude and phase
+    % Hij_mag_data = spectra.sig_2_1_3OCT0;
+    % Hij_phase_data = spectra.sig_3_Phi0;
+    % 
+    % Hij_mag = Hij_mag_data(:,2);
+    % Hij_phase_deg = Hij_phase_data(:,2);
+    % 
+    % % Convert phase from degrees to radians
+    % Hij_phase_rad = deg2rad(Hij_phase_deg);
+    % 
+    % % Här felar det för Hij phase rad är 8000x1 och Hij mag är 32x1
+    % 
+    % % Convert magnitude + phase to complex transfer function
+    % Hij_complex = Hij_mag .* exp(1j * Hij_phase_rad);
+%% nytt
     Hij_mag_data = spectra.sig_2_1_3OCT0;
-    Hij_phase_data = spectra.sig_4_P_1_3OCT0;
-
+    Hij_phase_data = spectra.sig_3_Phi0;
+    
+    % Magnitude at 1/3-octave frequencies
+    Hij_freq = Hij_mag_data(:,1);
     Hij_mag = Hij_mag_data(:,2);
-    Hij_phase_deg = Hij_phase_data(:,2);
+
+    % Phase at the same frequencies
+    phase_freq = Hij_phase_data(:,1);
+    phase_deg = Hij_phase_data(:,2);
+
+    Hij_phase_deg = interp1(phase_freq, phase_deg, Hij_freq);
 
     % Convert phase from degrees to radians
     Hij_phase_rad = deg2rad(Hij_phase_deg);
 
     % Convert magnitude + phase to complex transfer function
     Hij_complex = Hij_mag .* exp(1j * Hij_phase_rad);
+
 
     % Keep only 125-5000 Hz
     Hij(:,ii) = Hij_complex(freqMask);
@@ -131,11 +157,13 @@ grid on
 %% 9. Read reverberation data
 
 rmFolder = fullfile(fileparts(mfilename('fullpath')), ...
-    'Labb2_data', 'rm');
+    'Labb2_riktig_data', 'rm');
 
 dir(fullfile(rmFolder, '*.dat'));
 
-rmFiles = {'p1_1.dat', 'p1_2.dat', 'p1_3.dat'};
+%rmFiles = {'p1_1.dat', 'p1_2.dat', 'p1_3.dat'};
+rmFiles = {'rm_1.2.dat', 'rm_1.3.dat', 'rm_1.5.dat','rm_1.6.dat','rm_3.1.dat'...
+    'rm_3.4.dat','rm_3.5.dat','rm_3.6.dat','rm_6.1.dat','rm_6.2.dat','rm_6.3.dat','rm_6.4.dat'};
 
 %% 10. Process reverberation measurements
 
@@ -229,19 +257,20 @@ for i = 1:numBands
 end
 
 
-figure
-semilogx(centerFrequencies, T60, 'o-')
-xlabel('Frequency [Hz]')
-ylabel('T_{60} [s]')
-title('Reverberation time')
-grid on
+% figure
+% semilogx(centerFrequencies, T60, 'o-')
+% xlabel('Frequency [Hz]')
+% ylabel('T_{60} [s]')
+% title('Reverberation time')
+% grid on
 
 
 eta = 2.2 ./ (centerFrequencies .* T60);
 eta_all(k,:) = eta;
 end
-eta_mean = mean(eta_all, 1);
 
+eta_mean = mean(eta_all, 1);
+T60
 
 figure
 semilogx(centerFrequencies, eta_mean, 'o-')
