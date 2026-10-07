@@ -7,7 +7,7 @@ clc
 
 %Settings
 % Assumed mass of one plate section
-ms = 6.5/12;       % [kg]
+ms = 6.5/6;       % [kg]
 
 % Folder
 dataFolder = fullfile(fileparts(mfilename('fullpath')), ...
@@ -78,8 +78,6 @@ Hii_phase_rad = deg2rad(Hii_phase_deg);
 Hii = Hii_mag .* exp(1j * Hii_phase_rad);
 
 
-
-
 %% 5. Read transfer accelerances Hij
 
 Hij = zeros(length(f),6);
@@ -120,16 +118,14 @@ for ii = 1:6
 end
 
 %% 6. Sum of transfer accelerances
-sumHij = sum(Hij, 2);
-
+%sumHij = sum(Hij, 2);
+sumHij = sum(abs(Hij).^2, 2)
 
 %% 7. Structural loss factor - power injection
 
 %eta_pim = imag(Hii) ./ (ms .* sum(abs(Hij).^2, 2));
+eta_pim = imag(Hii) ./ (ms .* sumHij);
 
-%eta_pim = imag(Hii ./ (ms .* sumHij));
-
-eta_pim = imag(Hii ./ (ms .* sum(abs(Hij).^2, 2)));
 
 %% 8. Plot structural loss factor - power injection
 
