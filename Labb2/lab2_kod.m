@@ -136,6 +136,13 @@ ylabel(' \eta')
 title('PIM')
 grid on
 
+figure
+semilogx(f, eta_pim, 'o-')
+xlabel('Frequency [Hz]')
+ylabel('\eta')
+title('Structural loss factor - PIM')
+grid on
+xlim([125 5000])
 %% 9. Read reverberation data
 
 rmFolder = fullfile(fileparts(mfilename('fullpath')), ...
@@ -149,8 +156,17 @@ rmFiles = {'rm_1.2.dat', 'rm_1.3.dat', 'rm_1.5.dat','rm_1.6.dat','rm_3.1.dat'...
 
 %% 10. Process reverberation measurements
 
+Fs = 16000;
+
+octfilt = octaveFilterBank('1/3 octave', Fs, ...
+    'FrequencyRange', [125 5000], ...
+    'FilterOrder', 12);
+
+centerFrequencies = getCenterFrequencies(octfilt);
+numBands = length(centerFrequencies);
+
 numFiles = length(rmFiles);
-eta_all = NaN(numFiles, 16);
+eta_all = NaN(numFiles, numBands);
 
 for k = 1:numFiles
 
@@ -159,13 +175,10 @@ for k = 1:numFiles
     [~, ~, rmData] = readMWLdaq_LV(rmFile, 'rawdata');
 
  
-Fs = 16000;
+
 
 raw_data = rmData{2}(:,2);
 
-octfilt = octaveFilterBank('1/3 octave', Fs, ...
-    'FrequencyRange', [125 5000], ...
-    'FilterOrder', 12);
 
 oct_data = octfilt(raw_data);
 
@@ -182,10 +195,6 @@ mf_data = filter(b, a, abs(oct_data));
 
 t = rmData{2}(:,1);
 
-centerFrequencies = getCenterFrequencies(octfilt);
-
-
-numBands = length(centerFrequencies);
 
 T60 = NaN(1, numBands);
 
@@ -252,7 +261,7 @@ eta_all(k,:) = eta;
 end
 
 eta_mean = mean(eta_all, 1);
-T60
+f_rm = centerFrequencies;
 
 figure
 semilogx(centerFrequencies, eta_mean, 'o-')
@@ -261,3 +270,16 @@ ylabel('\eta')
 title('Mean loss factor from reverberation time')
 grid on
 
+
+figure
+
+semilogx(f, eta_pim, 'o-', 'DisplayName', 'PIM')
+hold on
+semilogx(f_rm, eta_mean, 's-', 'DisplayName', 'RM')
+
+xlabel('Frequency [Hz]')
+ylabel('Structural loss factor, \eta')
+title('Structural loss factor')
+legend('Location', 'best')
+grid on
+xlim([125 5000])
