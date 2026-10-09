@@ -168,14 +168,6 @@ numBands = length(centerFrequencies);
 numFiles = length(rmFiles);
 eta_all = NaN(numFiles, numBands);
 
-%% Settings for representative reverberation decay plot
-
-targetFreq = 1000;  % Desired centre frequency [Hz]
-[~, bandToPlot] = min(abs(centerFrequencies - targetFreq));
-
-plotFileIdx = 1;    % First measurement file
-decayPlot = [];     % Will store the selected decay curve
-
 for k = 1:numFiles
 
     rmFile = fullfile(rmFolder, rmFiles{k});
@@ -195,7 +187,7 @@ aS = round(at * Fs);    % averaging window [samples]
 b = (1 / aS) * ones(1, aS);
 a = 1;
 
-mf_data = sqrt(filter(b, a, oct_data.^2));
+mf_data = filter(b, a, abs(oct_data));
 
 t = rmData{2}(:,1);
 
@@ -239,28 +231,12 @@ for i = 1:numBands
 
     idx_end = idx_start + idx_end_relative - 1;
 
-% Linear fit
-fitMask = t >= t(idx_start) & t <= t(idx_end);
+    % Linear fit
+    fitMask = t >= t(idx_start) & t <= t(idx_end);
 
-if nnz(fitMask) < 3
-    continue
-end
+    p = polyfit(t(fitMask), level_dB(fitMask), 1);
 
-p = polyfit(t(fitMask), level_dB(fitMask), 1);
-
-slope = p(1);
-
-% Save one representative curve for plotting
-if k == plotFileIdx && i == bandToPlot
-
-    decayPlot.t = t;
-    decayPlot.level_dB = level_dB;
-    decayPlot.fitMask = fitMask;
-    decayPlot.fitLine = polyval(p, t(fitMask));
-    decayPlot.frequency = centerFrequencies(i);
-    decayPlot.slope = slope;
-
-end
+    slope = p(1);
 
     % Reverberation time
     T60(i) = -60 / slope;
@@ -444,43 +420,3 @@ sumHij = sum(Hij, 2);
 % PIM using the two input accelerance measurements
 eta_front = imag(Hii_front ./ (ms .* sumHij));
 eta_back  = imag(Hii_back  ./ (ms .* sumHij));
-
-%% Plot representative reverberation decay
-
-if isempty(decayPlot)
-
-    warning(['No representative decay curve was saved. ', ...
-        'Try another measurement file or frequency band.']);
-
-else
-
-    figure('Name', 'Reverberation Decay and Linear Fit');
-
-    % Complete measured decay
-    plot(decayPlot.t, decayPlot.level_dB, ...
-        'DisplayName', 'Measured decay');
-
-    hold on;
-
-    % Linear fit over the selected decay interval
-    plot(decayPlot.t(decayPlot.fitMask), ...
-        decayPlot.fitLine, 'r-', ...
-        'LineWidth', 2, ...
-        'DisplayName', 'Linear fit');
-
-    xlabel('Time [s]');
-    ylabel('Relative acceleration level [dB]');
-
-    title(sprintf('Reverberation decay at %.0f Hz', ...
-        decayPlot.frequency));
-
-    legend('Location', 'best');
-    grid on;
-
-    fprintf('\nRepresentative reverberation decay\n');
-    fprintf('Frequency: %.1f Hz\n', decayPlot.frequency);
-    fprintf('Decay slope: %.2f dB/s\n', decayPlot.slope);
-    fprintf('Estimated T60: %.3f s\n', ...
-        -60 / decayPlot.slope);
-
-end

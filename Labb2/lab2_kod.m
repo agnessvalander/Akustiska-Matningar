@@ -283,3 +283,5 @@ title('Structural loss factor')
 legend('Location', 'best')
 grid on
 xlim([125 5000])
+
+%% Graf som visar input accelerance för baksida vs. framsida
