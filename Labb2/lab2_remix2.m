@@ -454,7 +454,7 @@ if isempty(decayPlot)
 
 else
 
-    figure('Name', 'Reverberation Decay and Linear Fit');
+    figure();
 
     % Complete measured decay
     plot(decayPlot.t, decayPlot.level_dB, ...
