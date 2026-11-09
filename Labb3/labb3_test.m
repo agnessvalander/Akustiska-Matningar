@@ -10,7 +10,7 @@ s_long = 0.14; % Avstånd mellan mätposition 1' och 2
 
 sample_thicc = 0.040; % Tjockleken av absorbent [m], sätt till 0 för mätningar av tomt rör
 
-data_folder = 'lab3_data'; 
+data_folder = 'lab3_test'; 
 
 %% Inläsning av data 
 
@@ -37,7 +37,6 @@ absorber = analyse_tube(A1,A1p,A2,sample_thicc,D0,s_short,s_long,c);
 % Giltiga frekvensområden enligt laborationsinstruktionen
 range = empty.f >= 245 & empty.f <= 1900;
 
-
 figure(1) % Absorptionsfaktorn utan absorbent
 semilogx(empty.f, empty.alphaShort,'r')
 hold on
@@ -51,7 +50,6 @@ legend('2-1','2-1p')
 xlabel('Frequency [Hz]')
 ylabel('\alpha')
 title('Empty impedance tube')
-
 
 figure(2) % Absorptionsfaktorn med absorbent 
 semilogx(absorber.f, absorber.alphaShort,'r','LineWidth',1)
