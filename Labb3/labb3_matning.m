@@ -13,7 +13,7 @@ sample_thicc = 0.040; % Tjockleken av absorbent [m], sätt till 0 för mätninga
 df_empty = 'empty_tube'; 
 df_poly = 'polyester';
 df_mineral = 'mineralull';
-df_skum = 'skum'
+df_skum = 'skum';
 
 %% Inläsning av data 
 
@@ -22,7 +22,7 @@ df_skum = 'skum'
 [~, E1p, ~]  = readMWLdaq_LV(fullfile(df_empty,'empty_p1p_2.dat')); 
 [~, E2, ~]  = readMWLdaq_LV(fullfile(df_empty,'empty_p2_2.dat')); 
 
-% Med absorbent, 40mm tjocklek 
+% Med absorbent, 40mm tjocklek, ingen luftspalt
 [~, A1, ~]  = readMWLdaq_LV(fullfile(df_poly,'poly_p1_1.dat')); 
 [~, A1p, ~]  = readMWLdaq_LV(fullfile(df_poly,'poly_p1p_1.dat'));
 [~, A2, ~ ] = readMWLdaq_LV(fullfile(df_poly,'poly_p2_1.dat'));
