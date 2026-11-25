@@ -1,0 +1,146 @@
+%% LAB 4 - Structure-borne sound transmission loss
+% Symmetrical method, single-side excitation
+% Example data: mobility measurements
+
+clear;
+close all;
+clc;
+
+%% 1. Material and measurement parameters
+
+rho = 1020;          % Density of carbon fibre [kg/m^3]
+h = 0.002;           % Beam thickness [m]
+epsilon = 0.01;      % Loss factor
+E = 3.5e10*(1 + 1i*epsilon);  % Complex Young's modulus [Pa]
+
+D = E*h^3/12;        % Complex bending stiffness
+
+s = 0.025;           % Distance between measurement points [m]
+
+%% 2. Select frequency ranges
+
+frequency_ranges = {
+    '100_2300hz'
+    '2300_5000hz'
+};
+
+%% 3. Calculate transmission loss for each frequency range
+
+for band = 1:length(frequency_ranges)
+
+    range = frequency_ranges{band};
+
+    % Load the four measurement points
+    for p = 1:4
+
+        filename = sprintf('p%d_%s_ex.dat',p,range);
+
+        [f, AMP] = readExampleData(filename,'AMP0');
+        [~, Phi] = readExampleData(filename,'Phi0');
+
+        % Build complex mobility transfer function
+        H{p} = AMP .* exp(1i*Phi*pi/180);
+
+    end
+
+    % Assign transfer functions
+    H1 = H{1};
+    H2 = H{2};
+    H3 = H{3};
+    H4 = H{4};
+
+    %% 4. Calculate bending wave number
+
+    k = sqrt(2*pi*f) .* (rho*h/D).^(1/4);
+
+    %% 5. Calculate wave components
+
+    pjk = exp(1i*k*s);
+    mjk = exp(-1i*k*s);
+    jks = 2i*sin(k*s);
+
+    Am = mjk .* (H1.*pjk - H2) ./ jks;
+    Ap = pjk .* (H2 - H1.*mjk) ./ jks;
+
+    Bm = mjk .* (H4.*pjk - H3) ./ jks;
+    Bp = pjk .* (H3 - H4.*mjk) ./ jks;
+
+    %% 6. Calculate reflection and transmission coefficients
+
+    denominator = Am.^2 - Bm.^2;
+
+    r = (Am.*Ap - Bm.*Bp) ./ denominator;
+    t = (Am.*Bp - Bm.*Ap) ./ denominator;
+
+    %% 7. Calculate transmission loss
+
+    TL = -10*log10(abs(t).^2);
+
+    %% 8. Remove invalid frequency points
+
+    valid = f > 0 & ...
+            isfinite(TL) & ...
+            abs(sin(k*s)) > 1e-3 & ...
+            isfinite(t);
+
+    f_plot = f(valid);
+    TL_plot = TL(valid);
+
+    %% 9. Plot
+
+    figure;
+
+    semilogx(f_plot,TL_plot,'r','LineWidth',0.8);
+
+    grid on;
+    xlabel('Frequency [Hz]');
+    ylabel('Transmission loss [dB]');
+
+    title(['Reference carbon beam: ',strrep(range,'_','-')]);
+
+    ylim([-10 30]);
+    xlim([50 6000])
+end
+
+
+%% FUNCTION: Read example data
+
+function [frequency, values] = readExampleData(filename,channel)
+
+    % Read the binary data file
+    fid = fopen(filename,'r');
+
+    if fid == -1
+        error('Could not open file: %s',filename);
+    end
+
+    bytes = fread(fid,inf,'*uint8');
+    fclose(fid);
+
+    % Find the requested channel
+    marker = ['Channel ',channel];
+    pos = strfind(char(bytes.'),marker);
+
+    if isempty(pos)
+        error('Channel %s not found in %s',channel,filename);
+    end
+
+    % Find the end of the channel header
+    newline_pos = find(bytes(pos(1):end) == 10,1,'first');
+    data_start = pos(1) + newline_pos;
+
+    % Read binary header: data type and number of points
+    header = typecast(bytes(data_start:data_start+7),'uint32');
+
+    N = double(header(2));
+
+    % Read the two arrays: frequency and measurement values
+    first_byte = data_start + 8;
+    last_byte = first_byte + 2*N*8 - 1;
+
+    raw_data = typecast(bytes(first_byte:last_byte),'double');
+
+    frequency = raw_data(1:N);
+    values = raw_data(N+1:2*N);
+
+end
