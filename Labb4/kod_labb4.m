@@ -23,7 +23,6 @@ frequency_ranges = {
     '100_2300hz'
     '2300_5000hz'
 };
-
 %% 3. Calculate transmission loss for each frequency range
 
 for band = 1:length(frequency_ranges)
