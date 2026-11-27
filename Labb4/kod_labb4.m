@@ -144,3 +144,69 @@ function [frequency, values] = readExampleData(filename,channel)
     values = raw_data(N+1:2*N);
 
 end
+
+
+
+
+%% Test för ks = pi*n
+% Check of measurement point spacing
+
+%% Material parameters from Lab 4
+
+rho = 1020;           % Density [kg/m^3]
+h = 0.002;            % Beam thickness [m]
+epsilon = 0.01;       % Loss factor
+
+EX = 3.5e10*(1 + 1i*epsilon);  % Complex elasticity modulus [Pa]
+D = EX*h^3/12;                 % Complex bending stiffness
+
+%% Frequency range and measurement point distance
+
+f = linspace(100,5000,5000);   % Frequency [Hz]
+s = 0.025;                     % Distance between measurement points [m]
+
+%% Calculate wave number k
+
+k = sqrt(2*pi*f).*(rho*h/D).^(1/4);
+
+%% Calculate ks and sin(ks)
+
+ks = k*s;
+sin_ks = abs(sin(ks));
+
+%% Plot 1: Real part of ks
+
+figure;
+
+semilogx(f,real(ks)/pi,'b','LineWidth',1.5);
+hold on;
+
+% Integer multiples of pi
+yline(1,'r--');
+yline(2,'r--');
+yline(3,'r--');
+yline(4,'r--');
+
+grid on;
+xlabel('Frequency [Hz]');
+ylabel('Real(ks)/\pi');
+title('Wave number and measurement point spacing');
+
+%% Plot 2: Magnitude of sin(ks)
+
+figure;
+
+semilogy(f,sin_ks,'b','LineWidth',1.5);
+
+grid on;
+xlabel('Frequency [Hz]');
+ylabel('|sin(ks)|');
+title('Potential numerical instability');
+
+xlim([100 5000]);
+
+[min_value, index] = min(sin_ks);
+min_frequency = f(index);
+
+fprintf('Minimum |sin(ks)| = %.4f at %.1f Hz\n', ...
+        min_value, min_frequency);
